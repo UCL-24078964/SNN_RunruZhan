@@ -12,6 +12,8 @@ import numpy as np
 import itertools
 import os
 from torch.utils.data import Dataset, random_split
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Subset
 
 # Leaky neuron model, overriding the backward pass with a custom function
 class LeakySurrogate(nn.Module):
@@ -216,15 +218,20 @@ dataset = STEMNISTDataset(data_path)
 train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 
-train_dataset, test_dataset = random_split(dataset,[train_size, test_size],generator=torch.Generator().manual_seed(42))
+# train_dataset, test_dataset = random_split(dataset,[train_size, test_size],generator=torch.Generator().manual_seed(42))
+labels = [label for _, label in dataset.samples]
+indices = list(range(len(dataset)))
+train_idx, test_idx = train_test_split(indices,test_size=0.2,random_state=42,stratify=labels)
+train_dataset = Subset(dataset, train_idx)
+test_dataset = Subset(dataset, test_idx)
 
 # train_dataset = STEMNISTDataset(data_path)
 # test_dataset = STEMNISTDataset(data_path)
 # test_dataset = datasets.MNIST('/tmp/data/mnist', train=False, download=True, transform=transform)
 
 # Create DataLoaders
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=False)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
 
 # Network Architecture
 num_inputs = 512
